@@ -74,4 +74,4 @@ class FaceTracker:
                     ly = int(landmark.y * h)
                     cv2.circle(frame, (lx, ly), 1, (0, 255, 0), -1)
                 
-        return frame, status, face_count, results
+        return frame, status, face_count, gaze_status, results
