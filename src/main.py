@@ -19,6 +19,9 @@ gaze_threshold = 90
 
 current_warning = "CLEAN"
 
+# Added only to track the previous gaze direction
+previous_gaze_status = "CENTER"
+
 while True:
     frame = camera.read()
 
@@ -89,24 +92,40 @@ while True:
         missing_face_frames += 1
         multiple_face_frames = 0
         gaze_frames = 0
+        previous_gaze_status = "CENTER"
+
         if missing_face_frames >= missing_threshold:
             violation_msg = "WARNING: Face Not Detected!"
+
     elif face_count > 1:
         multiple_face_frames += 1
         missing_face_frames = 0
         gaze_frames = 0
+        previous_gaze_status = "CENTER"
+
         if multiple_face_frames >= multiple_threshold:
             violation_msg = "WARNING: Multiple Faces Detected!"
+
     elif gaze_status != "CENTER":
-        gaze_frames += 1
+
         missing_face_frames = 0
         multiple_face_frames = 0
+
+        # Reset counter when gaze direction changes
+        if gaze_status != previous_gaze_status:
+            gaze_frames = 0
+
+        gaze_frames += 1
+        previous_gaze_status = gaze_status
+
         if gaze_frames >= gaze_threshold:
             violation_msg = f"WARNING: {gaze_status}!"
+
     else:
         missing_face_frames = 0
         multiple_face_frames = 0
         gaze_frames = 0
+        previous_gaze_status = "CENTER"
         violation_msg = "CLEAN"
 
     current_warning = violation_msg

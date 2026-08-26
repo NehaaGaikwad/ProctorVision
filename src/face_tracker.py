@@ -6,7 +6,7 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
 class FaceTracker:
-    def __init__(self, max_faces=2):
+    def __init__(self, max_faces=5):
         script_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(script_dir, 'face_landmarker.task')
         model_path = model_path.replace('\\', '/')
