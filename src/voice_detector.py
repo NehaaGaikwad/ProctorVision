@@ -54,6 +54,19 @@ class VoiceDetector:
 
         self.violation_triggered = False
 
+        # --------------------------------------------------
+        # LIVE STATUS FOR MAIN PROCTORING WINDOW
+        # --------------------------------------------------
+
+        self.current_probability = 0.0
+        self.current_duration = 0.0
+        self.voice_status = "NO VOICE"
+        self.voice_violation = False
+
+        # --------------------------------------------------
+        # EVIDENCE DIRECTORY
+        # --------------------------------------------------
+
         project_root = os.path.dirname(
             os.path.dirname(
                 os.path.abspath(__file__)
@@ -70,9 +83,7 @@ class VoiceDetector:
             exist_ok=True
         )
 
-        self.violation_manager = (
-            ViolationManager()
-        )
+        self.violation_manager = ViolationManager()
 
         print("Voice Detector initialized.")
         print(
@@ -80,10 +91,12 @@ class VoiceDetector:
             "Microphone Array "
             "(Intel Smart Sound Technology)"
         )
+
         print(
             f"Evidence storage: "
             f"{self.evidence_dir}"
         )
+
         print(
             f"Database: "
             f"{self.violation_manager.database}"
@@ -132,6 +145,10 @@ class VoiceDetector:
         self.post_speech_buffer = []
 
         self.violation_triggered = False
+
+        self.voice_violation = False
+
+        self.voice_status = "VOICE DETECTED"
 
         print()
         print("SPEECH STARTED")
@@ -316,6 +333,10 @@ class VoiceDetector:
 
         self.violation_triggered = False
 
+        self.voice_violation = False
+        self.voice_status = "NO VOICE"
+        self.current_duration = 0.0
+
 
     def process_audio(self, audio):
 
@@ -324,6 +345,9 @@ class VoiceDetector:
                 audio
             )
         )
+
+        # Update live probability
+        self.current_probability = probability
 
         current_time = time.time()
 
@@ -353,6 +377,12 @@ class VoiceDetector:
                 - self.speech_start_time
             )
 
+            self.current_duration = duration
+
+            # ------------------------------------------
+            # SUSPICIOUS VOICE
+            # ------------------------------------------
+
             if (
                 duration
                 >= self.violation_duration
@@ -361,6 +391,8 @@ class VoiceDetector:
                 if not self.violation_triggered:
 
                     self.violation_triggered = True
+                    self.voice_violation = True
+                    self.voice_status = "SUSPICIOUS VOICE"
 
                     print()
                     print(
@@ -371,6 +403,14 @@ class VoiceDetector:
                         "Duration threshold "
                         f"reached: {duration:.2f}s"
                     )
+
+                else:
+
+                    self.voice_status = "SUSPICIOUS VOICE"
+
+            else:
+
+                self.voice_status = "VOICE DETECTED"
 
             return probability, duration
 
@@ -392,10 +432,24 @@ class VoiceDetector:
                     - self.speech_start_time
                 )
 
+                self.current_duration = duration
+
                 if (
                     silence_time
                     < self.silence_duration
                 ):
+
+                    if self.violation_triggered:
+
+                        self.voice_status = (
+                            "SUSPICIOUS VOICE"
+                        )
+
+                    else:
+
+                        self.voice_status = (
+                            "VOICE DETECTED"
+                        )
 
                     return (
                         probability,
@@ -420,6 +474,11 @@ class VoiceDetector:
                 else:
 
                     self.finish_speech()
+
+            else:
+
+                self.voice_status = "NO VOICE"
+                self.current_duration = 0.0
 
             return probability, 0.0
 
@@ -448,10 +507,9 @@ class VoiceDetector:
         )
 
         print(
-            "Press CTRL+C to stop."
+            "Voice monitoring running "
+            "in background."
         )
-
-        print()
 
         try:
 
@@ -467,32 +525,6 @@ class VoiceDetector:
                 while True:
 
                     sd.sleep(1000)
-
-        except KeyboardInterrupt:
-
-            print(
-                "\nVoice monitoring stopped."
-            )
-
-            if self.speech_active:
-
-                if self.violation_triggered:
-
-                    duration = (
-                        time.time()
-                        - self.speech_start_time
-                    )
-
-                    self.save_evidence(
-                        duration
-                    )
-
-                else:
-
-                    print(
-                        "Remaining speech "
-                        "discarded."
-                    )
 
         except Exception as e:
 
