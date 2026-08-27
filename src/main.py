@@ -4,11 +4,15 @@ import threading
 from camera import Camera
 from face_tracker import FaceTracker
 from voice_detector import VoiceDetector
+from monitor import WindowMonitor
 
 
 camera = Camera()
 face_tracker = FaceTracker()
 voice_detector = VoiceDetector()
+window_monitor = WindowMonitor(
+    exam_window_name="ProctorVision AI"
+)
 
 voice_thread = threading.Thread(
     target=voice_detector.start,
@@ -57,6 +61,8 @@ while True:
         gaze_status,
         results
     ) = face_tracker.process_frame(frame)
+
+    window_status = window_monitor.check()
 
     fps = camera.calculate_fps()
     height, width = frame.shape[:2]
@@ -244,6 +250,12 @@ while True:
             "WARNING: Voice Detected!"
         )
 
+    if window_status["active"]:
+
+        warnings.append(
+            "WARNING: Window Switch!"
+        )
+
     if warnings:
 
         warning_text = " | ".join(
@@ -324,6 +336,8 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
+
+window_monitor.finalize()
 
 camera.release()
 cv2.destroyAllWindows()
