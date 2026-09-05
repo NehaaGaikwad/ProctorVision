@@ -4,21 +4,23 @@ import ctypes
 from datetime import datetime
 from PIL import ImageGrab
 
-from violation_manager import ViolationManager
-
 
 class WindowMonitor:
 
-    def __init__(self, exam_window_name="ProctorVision AI"):
+    def __init__(
+        self,
+        exam_window_name="ProctorVision AI",
+        violation_manager=None
+    ):
 
         self.exam_window_name = exam_window_name
+        self.violation_manager = violation_manager
 
         project_root = os.path.dirname(
             os.path.dirname(
                 os.path.abspath(__file__)
             )
         )
-
         self.evidence_dir = os.path.join(
             project_root,
             "evidence",
@@ -29,8 +31,6 @@ class WindowMonitor:
             self.evidence_dir,
             exist_ok=True
         )
-
-        self.violation_manager = ViolationManager()
 
         self.switch_active = False
         self.switch_start_time = None
@@ -88,7 +88,6 @@ class WindowMonitor:
         )
 
         safe_title = safe_title[:50]
-
         filename = (
             "window_switch_"
             f"{safe_title}_"
@@ -114,7 +113,6 @@ class WindowMonitor:
             return filepath
 
         except Exception as e:
-
             print(
                 "Screen evidence error:",
                 e
@@ -134,6 +132,16 @@ class WindowMonitor:
 
     def check(self):
 
+        if (
+            self.violation_manager is None
+            or self.violation_manager.current_session_id is None
+        ):
+            return {
+                "active": False,
+                "window": "",
+                "duration": 0.0
+            }
+
         active_window = (
             self.get_active_window_title()
         )
@@ -143,7 +151,6 @@ class WindowMonitor:
         ):
 
             if self.switch_active:
-
                 duration = (
                     time.time()
                     - self.switch_start_time
@@ -154,7 +161,6 @@ class WindowMonitor:
                         duration
                     )
                 )
-
                 self.violation_manager.report_violation(
                     violation_type="WINDOW_SWITCH",
                     duration=duration,
@@ -167,7 +173,6 @@ class WindowMonitor:
                 print(
                     "WINDOW SWITCH ENDED"
                 )
-
                 print(
                     f"Previous Window : "
                     f"{self.current_window}"
@@ -200,7 +205,6 @@ class WindowMonitor:
         if not self.switch_active:
 
             current_time = time.time()
-
             if (
                 current_time
                 - self.last_event_time
@@ -222,7 +226,6 @@ class WindowMonitor:
             self.current_window = (
                 active_window
             )
-
             self.evidence_path = (
                 self.save_screen_evidence(
                     active_window
@@ -244,7 +247,6 @@ class WindowMonitor:
             )
 
             if self.evidence_path:
-
                 print(
                     f"Evidence    : "
                     f"{self.evidence_path}"
@@ -280,13 +282,14 @@ class WindowMonitor:
             )
         )
 
-        self.violation_manager.report_violation(
-            violation_type="WINDOW_SWITCH",
-            duration=duration,
-            confidence=1.0,
-            severity=severity,
-            evidence_path=self.evidence_path
-        )
+        if self.violation_manager is not None:
+            self.violation_manager.report_violation(
+                violation_type="WINDOW_SWITCH",
+                duration=duration,
+                confidence=1.0,
+                severity=severity,
+                evidence_path=self.evidence_path
+            )
 
         self.switch_active = False
         self.switch_start_time = None

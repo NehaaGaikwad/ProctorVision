@@ -8,12 +8,11 @@ from collections import deque
 from datetime import datetime
 
 from silero_vad import load_silero_vad
-from violation_manager import ViolationManager
 
 
 class VoiceDetector:
 
-    def __init__(self):
+    def __init__(self, violation_manager):
 
         self.sample_rate = 16000
         self.device = 1
@@ -54,18 +53,12 @@ class VoiceDetector:
 
         self.violation_triggered = False
 
-        # --------------------------------------------------
-        # LIVE STATUS FOR MAIN PROCTORING WINDOW
-        # --------------------------------------------------
-
         self.current_probability = 0.0
         self.current_duration = 0.0
         self.voice_status = "NO VOICE"
         self.voice_violation = False
 
-        # --------------------------------------------------
-        # EVIDENCE DIRECTORY
-        # --------------------------------------------------
+        self.monitoring_active = False
 
         project_root = os.path.dirname(
             os.path.dirname(
@@ -83,7 +76,7 @@ class VoiceDetector:
             exist_ok=True
         )
 
-        self.violation_manager = ViolationManager()
+        self.violation_manager = violation_manager
 
         print("Voice Detector initialized.")
         print(
@@ -102,6 +95,18 @@ class VoiceDetector:
             f"{self.violation_manager.database}"
         )
 
+    def set_monitoring_active(self, active):
+
+        if not active and self.speech_active:
+            self.finish_speech()
+
+        self.monitoring_active = active
+
+        if not active:
+            self.current_probability = 0.0
+            self.current_duration = 0.0
+            self.voice_status = "NO VOICE"
+            self.voice_violation = False
 
     def get_speech_probability(self, audio):
 
@@ -127,18 +132,13 @@ class VoiceDetector:
 
             return 0.0
 
-
     def start_speech(self):
 
         self.speech_active = True
 
-        self.speech_start_time = (
-            time.time()
-        )
+        self.speech_start_time = time.time()
 
-        self.last_speech_time = (
-            time.time()
-        )
+        self.last_speech_time = time.time()
 
         self.speech_buffer = []
 
@@ -153,7 +153,6 @@ class VoiceDetector:
         print()
         print("SPEECH STARTED")
 
-
     def calculate_confidence(self):
 
         if not self.speech_buffer:
@@ -163,10 +162,8 @@ class VoiceDetector:
 
         for audio in self.speech_buffer:
 
-            probability = (
-                self.get_speech_probability(
-                    audio
-                )
+            probability = self.get_speech_probability(
+                audio
             )
 
             probabilities.append(
@@ -179,7 +176,6 @@ class VoiceDetector:
         return float(
             np.mean(probabilities)
         )
-
 
     def calculate_severity(
         self,
@@ -202,7 +198,6 @@ class VoiceDetector:
             return "MEDIUM"
 
         return "LOW"
-
 
     def save_evidence(self, duration):
 
@@ -266,27 +261,27 @@ class VoiceDetector:
                 audio_int16.tobytes()
             )
 
-        confidence = (
-            self.calculate_confidence()
+        confidence = self.calculate_confidence()
+
+        severity = self.calculate_severity(
+            duration,
+            confidence
         )
 
-        severity = (
-            self.calculate_severity(
-                duration,
-                confidence
+        if (
+            self.violation_manager.current_session_id
+            is not None
+        ):
+
+            self.violation_manager.report_violation(
+                violation_type="VOICE",
+                duration=duration,
+                confidence=confidence,
+                severity=severity,
+                evidence_path=filepath
             )
-        )
-
-        self.violation_manager.report_violation(
-            violation_type="VOICE",
-            duration=duration,
-            confidence=confidence,
-            severity=severity,
-            evidence_path=filepath
-        )
 
         return filepath
-
 
     def finish_speech(self):
 
@@ -300,10 +295,8 @@ class VoiceDetector:
 
         if self.violation_triggered:
 
-            filepath = (
-                self.save_evidence(
-                    duration
-                )
+            filepath = self.save_evidence(
+                duration
             )
 
             if filepath:
@@ -334,19 +327,27 @@ class VoiceDetector:
         self.violation_triggered = False
 
         self.voice_violation = False
-        self.voice_status = "NO VOICE"
-        self.current_duration = 0.0
 
+        self.voice_status = "NO VOICE"
+
+        self.current_duration = 0.0
 
     def process_audio(self, audio):
 
-        probability = (
-            self.get_speech_probability(
-                audio
-            )
+        if not self.monitoring_active:
+
+            self.current_probability = 0.0
+            self.current_duration = 0.0
+            self.speech_active = False
+            self.voice_violation = False
+            self.voice_status = "NO VOICE"
+
+            return 0.0, 0.0
+
+        probability = self.get_speech_probability(
+            audio
         )
 
-        # Update live probability
         self.current_probability = probability
 
         current_time = time.time()
@@ -368,9 +369,7 @@ class VoiceDetector:
                 audio.copy()
             )
 
-            self.last_speech_time = (
-                current_time
-            )
+            self.last_speech_time = current_time
 
             duration = (
                 current_time
@@ -378,10 +377,6 @@ class VoiceDetector:
             )
 
             self.current_duration = duration
-
-            # ------------------------------------------
-            # SUSPICIOUS VOICE
-            # ------------------------------------------
 
             if (
                 duration
@@ -391,8 +386,12 @@ class VoiceDetector:
                 if not self.violation_triggered:
 
                     self.violation_triggered = True
+
                     self.voice_violation = True
-                    self.voice_status = "SUSPICIOUS VOICE"
+
+                    self.voice_status = (
+                        "SUSPICIOUS VOICE"
+                    )
 
                     print()
                     print(
@@ -406,11 +405,15 @@ class VoiceDetector:
 
                 else:
 
-                    self.voice_status = "SUSPICIOUS VOICE"
+                    self.voice_status = (
+                        "SUSPICIOUS VOICE"
+                    )
 
             else:
 
-                self.voice_status = "VOICE DETECTED"
+                self.voice_status = (
+                    "VOICE DETECTED"
+                )
 
             return probability, duration
 
@@ -478,10 +481,10 @@ class VoiceDetector:
             else:
 
                 self.voice_status = "NO VOICE"
+
                 self.current_duration = 0.0
 
             return probability, 0.0
-
 
     def start(self):
 
@@ -533,7 +536,6 @@ class VoiceDetector:
                 e
             )
 
-
     def _callback(
         self,
         indata,
@@ -549,9 +551,7 @@ class VoiceDetector:
                 status
             )
 
-        audio = (
-            indata[:, 0].copy()
-        )
+        audio = indata[:, 0].copy()
 
         probability, duration = (
             self.process_audio(
@@ -592,5 +592,7 @@ class VoiceDetector:
 
 if __name__ == "__main__":
 
-    detector = VoiceDetector()
-    detector.start()
+    print(
+        "VoiceDetector must be started "
+        "from main.py"
+    )

@@ -1,6 +1,7 @@
 import cv2
 import threading
 import os
+import time
 from datetime import datetime
 
 from camera import Camera
@@ -9,16 +10,27 @@ from voice_detector import VoiceDetector
 from monitor import WindowMonitor
 from object_detector import ObjectDetector
 from violation_manager import ViolationManager
+from report_generator import ReportGenerator
+
+
+EXAM_DURATION = 120
 
 
 camera = Camera()
 face_tracker = FaceTracker()
-voice_detector = VoiceDetector()
-window_monitor = WindowMonitor(
-    exam_window_name="ProctorVision AI"
-)
-object_detector = ObjectDetector()
 violation_manager = ViolationManager()
+report_generator = ReportGenerator()
+
+voice_detector = VoiceDetector(
+    violation_manager
+)
+
+window_monitor = WindowMonitor(
+    exam_window_name="ProctorVision AI",
+    violation_manager=violation_manager
+)
+
+object_detector = ObjectDetector()
 
 
 voice_thread = threading.Thread(
@@ -27,6 +39,7 @@ voice_thread = threading.Thread(
 )
 
 voice_thread.start()
+
 
 window_name = "ProctorVision AI"
 
@@ -62,6 +75,9 @@ previous_gaze_status = "CENTER"
 book_warning_active = False
 
 phone_violation_logged = False
+phone_missed_frames = 0
+phone_missed_threshold = 20
+
 book_violation_logged = False
 
 evidence_dir = os.path.join(
@@ -80,6 +96,11 @@ os.makedirs(
 )
 
 
+exam_active = False
+exam_finished = False
+exam_start_time = None
+
+
 while True:
 
     frame = camera.read()
@@ -88,7 +109,176 @@ while True:
         print("Camera frame could not be read.")
         break
 
-    object_detections = object_detector.detect(frame)
+    height, width = frame.shape[:2]
+
+    if not exam_active and not exam_finished:
+
+        cv2.putText(
+            frame,
+            "EXAM: NOT STARTED",
+            (20, 40),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.putText(
+            frame,
+            "Press S to Start Exam",
+            (20, 80),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.putText(
+            frame,
+            "Press Q to Quit",
+            (20, 115),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.imshow(
+            window_name,
+            frame
+        )
+
+        key = cv2.waitKey(1) & 0xFF
+
+        if key == ord("s"):
+
+            violation_manager.start_session()
+
+            voice_detector.set_monitoring_active(
+                True
+            )
+
+            exam_active = True
+            exam_finished = False
+            exam_start_time = time.time()
+
+            missing_face_frames = 0
+            multiple_face_frames = 0
+            gaze_frames = 0
+
+            book_frames = 0
+            book_missed_frames = 0
+
+            current_warning = "CLEAN"
+            previous_gaze_status = "CENTER"
+
+            book_warning_active = False
+
+            phone_violation_logged = False
+            phone_missed_frames = 0
+            book_violation_logged = False
+
+            print()
+            print("Exam monitoring started.")
+            print(
+                f"Exam duration: "
+                f"{EXAM_DURATION} seconds"
+            )
+
+        elif key == ord("q"):
+
+            break
+
+        continue
+
+
+    if exam_finished:
+
+        cv2.putText(
+            frame,
+            "EXAM COMPLETED",
+            (20, 50),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 255, 0),
+            2
+        )
+
+        cv2.putText(
+            frame,
+            "Monitoring stopped",
+            (20, 90),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.putText(
+            frame,
+            "Press Q to Quit",
+            (20, 125),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.imshow(
+            window_name,
+            frame
+        )
+
+        key = cv2.waitKey(1) & 0xFF
+
+        if key == ord("q"):
+
+            break
+
+        continue
+
+
+    elapsed_time = (
+        time.time()
+        - exam_start_time
+    )
+
+    remaining_time = max(
+        0,
+        EXAM_DURATION - elapsed_time
+    )
+
+    if elapsed_time >= EXAM_DURATION:
+
+        print()
+        print("=" * 60)
+        print("EXAM TIME COMPLETED")
+        print("=" * 60)
+
+        voice_detector.set_monitoring_active(
+            False
+        )
+
+        window_monitor.finalize()
+
+        session_id = violation_manager.end_session()
+
+        report_generator.generate(
+            session_id
+        )
+
+        exam_active = False
+        exam_finished = True
+
+        print("=" * 60)
+        print()
+
+        continue
+
+
+    object_detections = object_detector.detect(
+        frame
+    )
 
     phone_detected = any(
         detection["class"] == "cell phone"
@@ -118,6 +308,7 @@ while True:
         default=0.0
     )
 
+
     if book_detected:
 
         book_frames += 1
@@ -134,13 +325,34 @@ while True:
 
             book_missed_frames += 1
 
-            if book_missed_frames >= book_missed_threshold:
+            if (
+                book_missed_frames
+                >= book_missed_threshold
+            ):
+
                 book_warning_active = False
                 book_missed_frames = 0
                 book_violation_logged = False
 
-    if not phone_detected:
-        phone_violation_logged = False
+
+    if phone_detected:
+
+        phone_missed_frames = 0
+
+    else:
+
+        if phone_violation_logged:
+
+            phone_missed_frames += 1
+
+            if (
+                phone_missed_frames
+                >= phone_missed_threshold
+            ):
+
+                phone_violation_logged = False
+                phone_missed_frames = 0
+
 
     (
         frame,
@@ -148,11 +360,17 @@ while True:
         face_count,
         gaze_status,
         results
-    ) = face_tracker.process_frame(frame)
+    ) = face_tracker.process_frame(
+        frame
+    )
+
 
     window_status = window_monitor.check()
+
     fps = camera.calculate_fps()
+
     height, width = frame.shape[:2]
+
 
     cv2.putText(
         frame,
@@ -184,6 +402,17 @@ while True:
         2
     )
 
+    cv2.putText(
+        frame,
+        f"Time Remaining: {int(remaining_time)}s",
+        (20, 150),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.7,
+        (255, 255, 255),
+        2
+    )
+
+
     face_color = (
         (0, 255, 0)
         if status == "DETECTED"
@@ -194,12 +423,13 @@ while True:
     cv2.putText(
         frame,
         f"Face: {status}",
-        (20, 150),
+        (20, 185),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.7,
         face_color,
         2
     )
+
 
     voice_probability = (
         voice_detector.current_probability
@@ -208,6 +438,7 @@ while True:
     voice_duration = (
         voice_detector.current_duration
     )
+
 
     if voice_detector.voice_violation:
 
@@ -224,10 +455,11 @@ while True:
         voice_color = (0, 255, 0)
         voice_display = "Voice: NO VOICE"
 
+
     cv2.putText(
         frame,
         voice_display,
-        (20, 185),
+        (20, 220),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.7,
         voice_color,
@@ -237,26 +469,29 @@ while True:
     cv2.putText(
         frame,
         f"Voice Probability: {voice_probability:.2f}",
-        (20, 220),
+        (20, 255),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.65,
         (255, 255, 255),
         2
     )
 
+
     if voice_detector.speech_active:
 
         cv2.putText(
             frame,
             f"Voice Duration: {voice_duration:.1f}s",
-            (20, 255),
+            (20, 290),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.65,
             (255, 255, 255),
             2
         )
 
+
     violation_msg = "CLEAN"
+
 
     if status == "NOT DETECTED":
 
@@ -267,9 +502,11 @@ while True:
         previous_gaze_status = "CENTER"
 
         if missing_face_frames >= missing_threshold:
+
             violation_msg = (
                 "WARNING: Face Not Detected!"
             )
+
 
     elif face_count > 1:
 
@@ -280,9 +517,11 @@ while True:
         previous_gaze_status = "CENTER"
 
         if multiple_face_frames >= multiple_threshold:
+
             violation_msg = (
                 "WARNING: Multiple Faces Detected!"
             )
+
 
     elif gaze_status != "CENTER":
 
@@ -290,6 +529,7 @@ while True:
         multiple_face_frames = 0
 
         if gaze_status != previous_gaze_status:
+
             gaze_frames = 0
 
         gaze_frames += 1
@@ -302,6 +542,7 @@ while True:
                 f"WARNING: {gaze_status}!"
             )
 
+
     else:
 
         missing_face_frames = 0
@@ -312,15 +553,18 @@ while True:
 
         violation_msg = "CLEAN"
 
+
     current_warning = violation_msg
 
     warnings = []
+
 
     if current_warning != "CLEAN":
 
         warnings.append(
             current_warning
         )
+
 
     if voice_detector.voice_violation:
 
@@ -334,11 +578,13 @@ while True:
             "WARNING: Voice Detected!"
         )
 
+
     if window_status["active"]:
 
         warnings.append(
             "WARNING: Window Switch!"
         )
+
 
     if phone_detected:
 
@@ -346,11 +592,13 @@ while True:
             "WARNING: Phone Detected!"
         )
 
+
     if book_warning_active:
 
         warnings.append(
             "WARNING: Book Detected!"
         )
+
 
     if warnings:
 
@@ -389,6 +637,7 @@ while True:
             2
         )
 
+
     else:
 
         status_text = "STATUS: CLEAN"
@@ -424,6 +673,7 @@ while True:
             2
         )
 
+
     if phone_detected and not phone_violation_logged:
 
         timestamp = datetime.now().strftime(
@@ -441,11 +691,17 @@ while True:
         )
 
         if phone_confidence >= 0.80:
+
             severity = "HIGH"
+
         elif phone_confidence >= 0.50:
+
             severity = "MEDIUM"
+
         else:
+
             severity = "LOW"
+
 
         violation_manager.report_violation(
             violation_type="PHONE",
@@ -456,6 +712,7 @@ while True:
         )
 
         phone_violation_logged = True
+
 
     if book_warning_active and not book_violation_logged:
 
@@ -474,11 +731,17 @@ while True:
         )
 
         if book_confidence >= 0.80:
+
             severity = "HIGH"
+
         elif book_confidence >= 0.50:
+
             severity = "MEDIUM"
+
         else:
+
             severity = "LOW"
+
 
         violation_manager.report_violation(
             violation_type="BOOK",
@@ -490,15 +753,59 @@ while True:
 
         book_violation_logged = True
 
+
     cv2.imshow(
         window_name,
         frame
     )
 
-    if cv2.waitKey(1) & 0xFF == ord("q"):
+
+    key = cv2.waitKey(1) & 0xFF
+
+
+    if key == ord("e"):
+
+        voice_detector.set_monitoring_active(
+            False
+        )
+
+        window_monitor.finalize()
+
+        session_id = violation_manager.end_session()
+
+        report_generator.generate(
+            session_id
+        )
+
+        exam_active = False
+        exam_finished = True
+
+        print()
+        print("EXAM ENDED BY USER")
+        print()
+
+
+    elif key == ord("q"):
+
+        if exam_active:
+
+            voice_detector.set_monitoring_active(
+                False
+            )
+
+            window_monitor.finalize()
+
+            session_id = violation_manager.end_session()
+
+            report_generator.generate(
+                session_id
+            )
+
+            exam_active = False
+            exam_finished = True
+
         break
 
 
-window_monitor.finalize()
 camera.release()
 cv2.destroyAllWindows()

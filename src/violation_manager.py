@@ -4,6 +4,7 @@ from datetime import datetime
 
 
 class ViolationManager:
+
     def __init__(self, database=None):
 
         if database is None:
@@ -27,7 +28,6 @@ class ViolationManager:
         )
 
         self.setup_database()
-
 
     def setup_database(self):
 
@@ -75,7 +75,6 @@ class ViolationManager:
         connection.commit()
         connection.close()
 
-
     def start_session(self):
 
         timestamp = datetime.now()
@@ -113,12 +112,14 @@ class ViolationManager:
         print("EXAM SESSION STARTED")
         print("=" * 60)
         print(f"Session ID : {session_id}")
-        print(f"Start Time : {timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(
+            f"Start Time : "
+            f"{timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
+        )
         print("=" * 60)
         print()
 
         return session_id
-
 
     def end_session(self):
 
@@ -153,7 +154,10 @@ class ViolationManager:
         print("EXAM SESSION ENDED")
         print("=" * 60)
         print(f"Session ID : {self.current_session_id}")
-        print(f"End Time   : {timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(
+            f"End Time   : "
+            f"{timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
+        )
         print("=" * 60)
         print()
 
@@ -161,7 +165,6 @@ class ViolationManager:
         self.current_session_id = None
 
         return session_id
-
 
     def report_violation(
         self,
@@ -220,7 +223,10 @@ class ViolationManager:
             print(f"Evidence   : {evidence_path}")
 
         if self.current_session_id:
-            print(f"Session    : {self.current_session_id}")
+            print(
+                f"Session    : "
+                f"{self.current_session_id}"
+            )
 
         print("=" * 60)
         print()
