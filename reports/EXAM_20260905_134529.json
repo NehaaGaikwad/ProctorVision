@@ -1,0 +1,340 @@
+{
+    "session": {
+        "session_id": "EXAM_20260905_134529",
+        "start_time": "2026-09-05 13:45:29",
+        "end_time": "2026-09-05 13:47:29",
+        "status": "COMPLETED",
+        "total_duration_seconds": 120.0
+    },
+    "summary": {
+        "total_violations": 35,
+        "violation_types": {
+            "VOICE": 3,
+            "PHONE": 27,
+            "WINDOW_SWITCH": 2,
+            "BOOK": 3
+        },
+        "severity": {
+            "MEDIUM": 4,
+            "LOW": 31
+        },
+        "final_result": "MEDIUM RISK"
+    },
+    "violations": [
+        {
+            "id": 285,
+            "type": "VOICE",
+            "timestamp": "2026-09-05 13:45:44",
+            "duration": 8.419700384140015,
+            "confidence": 0.7969730776354537,
+            "severity": "MEDIUM",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\voice_20260905_134544.wav"
+        },
+        {
+            "id": 286,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:45:49",
+            "duration": 0.0,
+            "confidence": 0.12133337557315826,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-45-49.jpg"
+        },
+        {
+            "id": 287,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:45:50",
+            "duration": 0.0,
+            "confidence": 0.1404958963394165,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-45-50.jpg"
+        },
+        {
+            "id": 288,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:45:51",
+            "duration": 0.0,
+            "confidence": 0.05908903107047081,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-45-50.jpg"
+        },
+        {
+            "id": 289,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:45:51",
+            "duration": 0.0,
+            "confidence": 0.1267232596874237,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-45-51.jpg"
+        },
+        {
+            "id": 290,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:45:52",
+            "duration": 0.0,
+            "confidence": 0.05921362712979317,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-45-52.jpg"
+        },
+        {
+            "id": 291,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:45:53",
+            "duration": 0.0,
+            "confidence": 0.25581178069114685,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-45-53.jpg"
+        },
+        {
+            "id": 292,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:45:53",
+            "duration": 0.0,
+            "confidence": 0.07422829419374466,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-45-53.jpg"
+        },
+        {
+            "id": 293,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:45:56",
+            "duration": 0.0,
+            "confidence": 0.3052184283733368,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-45-56.jpg"
+        },
+        {
+            "id": 294,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:46:00",
+            "duration": 0.0,
+            "confidence": 0.19073757529258728,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-46-00.jpg"
+        },
+        {
+            "id": 295,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:46:24",
+            "duration": 0.0,
+            "confidence": 0.22555451095104218,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-46-24.jpg"
+        },
+        {
+            "id": 296,
+            "type": "VOICE",
+            "timestamp": "2026-09-05 13:46:32",
+            "duration": 7.14043664932251,
+            "confidence": 0.7253043757466783,
+            "severity": "MEDIUM",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\voice_20260905_134632.wav"
+        },
+        {
+            "id": 297,
+            "type": "WINDOW_SWITCH",
+            "timestamp": "2026-09-05 13:46:32",
+            "duration": 1.912348985671997,
+            "confidence": 1.0,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\window_switch\\window_switch_Task_View_20260905_134630.png"
+        },
+        {
+            "id": 298,
+            "type": "WINDOW_SWITCH",
+            "timestamp": "2026-09-05 13:46:34",
+            "duration": 1.2457432746887207,
+            "confidence": 1.0,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\window_switch\\window_switch_Task_View_20260905_134633.png"
+        },
+        {
+            "id": 299,
+            "type": "BOOK",
+            "timestamp": "2026-09-05 13:46:37",
+            "duration": 0.0,
+            "confidence": 0.21840082108974457,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\book_2026-09-05_13-46-37.jpg"
+        },
+        {
+            "id": 300,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:46:42",
+            "duration": 0.0,
+            "confidence": 0.19470582902431488,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-46-42.jpg"
+        },
+        {
+            "id": 301,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:46:43",
+            "duration": 0.0,
+            "confidence": 0.07216314226388931,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-46-43.jpg"
+        },
+        {
+            "id": 302,
+            "type": "BOOK",
+            "timestamp": "2026-09-05 13:46:45",
+            "duration": 0.0,
+            "confidence": 0.3246276378631592,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\book_2026-09-05_13-46-45.jpg"
+        },
+        {
+            "id": 303,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:00",
+            "duration": 0.0,
+            "confidence": 0.054688941687345505,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-00.jpg"
+        },
+        {
+            "id": 304,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:06",
+            "duration": 0.0,
+            "confidence": 0.06978260725736618,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-06.jpg"
+        },
+        {
+            "id": 305,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:07",
+            "duration": 0.0,
+            "confidence": 0.054436538368463516,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-07.jpg"
+        },
+        {
+            "id": 306,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:12",
+            "duration": 0.0,
+            "confidence": 0.0568416565656662,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-12.jpg"
+        },
+        {
+            "id": 307,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:15",
+            "duration": 0.0,
+            "confidence": 0.1378476917743683,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-15.jpg"
+        },
+        {
+            "id": 308,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:15",
+            "duration": 0.0,
+            "confidence": 0.07446824014186859,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-15.jpg"
+        },
+        {
+            "id": 309,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:16",
+            "duration": 0.0,
+            "confidence": 0.1261032074689865,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-16.jpg"
+        },
+        {
+            "id": 310,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:16",
+            "duration": 0.0,
+            "confidence": 0.09852895885705948,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-16.jpg"
+        },
+        {
+            "id": 311,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:19",
+            "duration": 0.0,
+            "confidence": 0.11110315471887589,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-19.jpg"
+        },
+        {
+            "id": 312,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:21",
+            "duration": 0.0,
+            "confidence": 0.6020869612693787,
+            "severity": "MEDIUM",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-21.jpg"
+        },
+        {
+            "id": 313,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:21",
+            "duration": 0.0,
+            "confidence": 0.07288461178541183,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-21.jpg"
+        },
+        {
+            "id": 314,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:22",
+            "duration": 0.0,
+            "confidence": 0.0833338052034378,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-22.jpg"
+        },
+        {
+            "id": 315,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:22",
+            "duration": 0.0,
+            "confidence": 0.08025351166725159,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-22.jpg"
+        },
+        {
+            "id": 316,
+            "type": "BOOK",
+            "timestamp": "2026-09-05 13:47:23",
+            "duration": 0.0,
+            "confidence": 0.21572113037109375,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\book_2026-09-05_13-47-23.jpg"
+        },
+        {
+            "id": 317,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:23",
+            "duration": 0.0,
+            "confidence": 0.054066937416791916,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-23.jpg"
+        },
+        {
+            "id": 318,
+            "type": "PHONE",
+            "timestamp": "2026-09-05 13:47:26",
+            "duration": 0.0,
+            "confidence": 0.11663541942834854,
+            "severity": "LOW",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\object_detection\\phone_2026-09-05_13-47-26.jpg"
+        },
+        {
+            "id": 319,
+            "type": "VOICE",
+            "timestamp": "2026-09-05 13:47:28",
+            "duration": 9.510652303695679,
+            "confidence": 0.7867263557507357,
+            "severity": "MEDIUM",
+            "evidence_path": "C:\\Users\\Neha\\Desktop\\Coding\\Python\\OpenCV\\ProctorVision\\evidence\\voice_20260905_134727.wav"
+        }
+    ]
+}

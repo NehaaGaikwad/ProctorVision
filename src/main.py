@@ -74,9 +74,14 @@ previous_gaze_status = "CENTER"
 
 book_warning_active = False
 
+phone_frames = 0
+phone_threshold = 5
 phone_violation_logged = False
 phone_missed_frames = 0
 phone_missed_threshold = 20
+best_phone_confidence = 0.0
+best_phone_frame = None
+best_phone_box = None
 
 book_violation_logged = False
 
@@ -174,8 +179,13 @@ while True:
 
             book_warning_active = False
 
+            phone_frames = 0
             phone_violation_logged = False
             phone_missed_frames = 0
+            best_phone_confidence = 0.0
+            best_phone_frame = None
+            best_phone_box = None
+
             book_violation_logged = False
 
             print()
@@ -337,9 +347,34 @@ while True:
 
     if phone_detected:
 
+        phone_frames += 1
         phone_missed_frames = 0
 
+        current_phone = max(
+            (
+                detection
+                for detection in object_detections
+                if detection["class"] == "cell phone"
+            ),
+            key=lambda detection: detection["confidence"]
+        )
+
+        if (
+            current_phone["confidence"]
+            > best_phone_confidence
+        ):
+
+            best_phone_confidence = (
+                current_phone["confidence"]
+            )
+
+            best_phone_box = current_phone["box"]
+
+            best_phone_frame = frame.copy()
+
     else:
+
+        phone_frames = 0
 
         if phone_violation_logged:
 
@@ -352,6 +387,14 @@ while True:
 
                 phone_violation_logged = False
                 phone_missed_frames = 0
+                best_phone_confidence = 0.0
+                best_phone_frame = None
+                best_phone_box = None
+
+
+    phone_confirmed = (
+        phone_frames >= phone_threshold
+    )
 
 
     (
@@ -586,7 +629,7 @@ while True:
         )
 
 
-    if phone_detected:
+    if phone_confirmed:
 
         warnings.append(
             "WARNING: Phone Detected!"
@@ -674,7 +717,7 @@ while True:
         )
 
 
-    if phone_detected and not phone_violation_logged:
+    if phone_confirmed and not phone_violation_logged:
 
         timestamp = datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S"
@@ -685,22 +728,48 @@ while True:
             f"phone_{timestamp}.jpg"
         )
 
-        cv2.imwrite(
-            evidence_path,
-            frame
+        evidence_frame = (
+            best_phone_frame.copy()
+            if best_phone_frame is not None
+            else frame.copy()
         )
 
-        if phone_confidence >= 0.80:
+        if best_phone_box is not None:
+
+            x1, y1, x2, y2 = best_phone_box
+
+            cv2.rectangle(
+                evidence_frame,
+                (x1, y1),
+                (x2, y2),
+                (0, 0, 255),
+                3
+            )
+
+            cv2.putText(
+                evidence_frame,
+                f"PHONE {best_phone_confidence:.2f}",
+                (x1, max(y1 - 10, 25)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 0, 255),
+                2
+            )
+
+        cv2.imwrite(
+            evidence_path,
+            evidence_frame
+        )
+
+        phone_confidence = best_phone_confidence
+
+        if phone_confidence >= 0.70:
 
             severity = "HIGH"
 
-        elif phone_confidence >= 0.50:
-
-            severity = "MEDIUM"
-
         else:
 
-            severity = "LOW"
+            severity = "MEDIUM"
 
 
         violation_manager.report_violation(

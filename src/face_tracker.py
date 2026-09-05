@@ -69,9 +69,4 @@ class FaceTracker:
                 cv2.putText(frame, f"Gaze: {gaze_status}", (text_x, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
                 cv2.putText(frame, f"Faces: {face_count}", (text_x, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
                 
-                for landmark in face_landmarks:
-                    lx = int(landmark.x * w)
-                    ly = int(landmark.y * h)
-                    cv2.circle(frame, (lx, ly), 1, (0, 255, 0), -1)
-                
         return frame, status, face_count, gaze_status, results

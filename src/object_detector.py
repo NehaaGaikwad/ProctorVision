@@ -12,7 +12,7 @@ class ObjectDetector:
         }
 
         self.confidence_thresholds = {
-            "cell phone": 0.05,
+            "cell phone": 0.20,
             "book": 0.20
         }
 

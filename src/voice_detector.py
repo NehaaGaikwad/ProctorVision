@@ -190,14 +190,7 @@ class VoiceDetector:
 
             return "HIGH"
 
-        if (
-            duration >= 5.0
-            and confidence >= 0.60
-        ):
-
-            return "MEDIUM"
-
-        return "LOW"
+        return "MEDIUM"
 
     def save_evidence(self, duration):
 
