@@ -147,6 +147,143 @@ def get_report_path(session_id):
     )
 
 
+def get_violation_type_counts(dataframe):
+
+    if dataframe.empty:
+
+        return pd.DataFrame(
+            {
+                "Type": [
+                    "Voice",
+                    "Phone",
+                    "Book",
+                    "Window Switch",
+                    "No Face",
+                    "Multiple Faces",
+                    "Gaze Violation"
+                ],
+                "Count": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            }
+        )
+
+    violation_types = (
+        dataframe["type"]
+        .astype(str)
+        .str.upper()
+    )
+
+    voice_count = (
+        violation_types == "VOICE"
+    ).sum()
+
+    phone_count = (
+        violation_types == "PHONE"
+    ).sum()
+
+    book_count = (
+        violation_types == "BOOK"
+    ).sum()
+
+    window_count = (
+        violation_types == "WINDOW_SWITCH"
+    ).sum()
+
+    no_face_count = (
+        (violation_types == "NO_FACE") |
+        (violation_types == "FACE_MISSING") |
+        (violation_types == "MISSING_FACE")
+    ).sum()
+
+    multiple_faces_count = (
+        (violation_types == "MULTIPLE_FACES") |
+        (violation_types == "MULTIPLE_FACE")
+    ).sum()
+
+    gaze_count = (
+        (violation_types == "GAZE") |
+        (violation_types == "GAZE_VIOLATION") |
+        (violation_types == "GAZE VIOLATION")
+    ).sum()
+
+    return pd.DataFrame(
+        {
+            "Type": [
+                "Voice",
+                "Phone",
+                "Book",
+                "Window Switch",
+                "No Face",
+                "Multiple Faces",
+                "Gaze Violation"
+            ],
+            "Count": [
+                voice_count,
+                phone_count,
+                book_count,
+                window_count,
+                no_face_count,
+                multiple_faces_count,
+                gaze_count
+            ]
+        }
+    )
+
+
+def get_severity_counts(dataframe):
+
+    if dataframe.empty:
+
+        return pd.DataFrame(
+            {
+                "Severity": [
+                    "HIGH",
+                    "MEDIUM",
+                    "LOW"
+                ],
+                "Count": [
+                    0,
+                    0,
+                    0
+                ]
+            }
+        )
+
+    high_count = (
+        dataframe["severity"] == "HIGH"
+    ).sum()
+
+    medium_count = (
+        dataframe["severity"] == "MEDIUM"
+    ).sum()
+
+    low_count = (
+        dataframe["severity"] == "LOW"
+    ).sum()
+
+    return pd.DataFrame(
+        {
+            "Severity": [
+                "HIGH",
+                "MEDIUM",
+                "LOW"
+            ],
+            "Count": [
+                high_count,
+                medium_count,
+                low_count
+            ]
+        }
+    )
+
+
 st.title("🛡️ ProctorVision AI")
 
 st.caption(
@@ -252,99 +389,25 @@ if violations.empty:
 
 else:
 
-    col1, col2 = st.columns(2)
+    st.markdown("### Violation Types")
 
-
-    with col1:
-
-        st.markdown("### Violation Types")
-
-
-        type_data = (
-            violations["type"]
-            .value_counts()
-            .rename_axis("Type")
-            .reset_index(name="Count")
-        )
-
-
-        st.bar_chart(
-            type_data.set_index("Type")
-        )
-
-
-    with col2:
-
-        st.markdown("### Severity Distribution")
-
-
-        severity_data = pd.DataFrame(
-            {
-                "Severity": [
-                    "HIGH",
-                    "MEDIUM",
-                    "LOW"
-                ],
-                "Count": [
-                    high_count,
-                    medium_count,
-                    low_count
-                ]
-            }
-        )
-
-
-        st.bar_chart(
-            severity_data.set_index("Severity")
-        )
-
-
-st.divider()
-
-
-st.markdown("## 👤 Face Monitoring Analytics")
-
-
-no_face_count = 0
-multiple_face_count = 0
-
-
-if not violations.empty:
-
-    violation_types = (
-        violations["type"]
-        .astype(str)
-        .str.upper()
+    type_data = get_violation_type_counts(
+        violations
     )
 
+    st.bar_chart(
+        type_data.set_index("Type")
+    )
 
-    no_face_count = (
-        violation_types == "NO_FACE"
-    ).sum()
+    st.markdown("### Severity Distribution")
 
+    severity_data = get_severity_counts(
+        violations
+    )
 
-    multiple_face_count = (
-        violation_types == "MULTIPLE_FACES"
-    ).sum()
-
-
-face_data = pd.DataFrame(
-    {
-        "Detection": [
-            "No Face",
-            "Multiple Faces"
-        ],
-        "Count": [
-            no_face_count,
-            multiple_face_count
-        ]
-    }
-)
-
-
-st.bar_chart(
-    face_data.set_index("Detection")
-)
+    st.bar_chart(
+        severity_data.set_index("Severity")
+    )
 
 
 st.divider()
@@ -397,11 +460,9 @@ else:
             session_data["start_time"]
         )
 
-
         end_time = pd.to_datetime(
             session_data["end_time"]
         )
-
 
         duration = (
             end_time - start_time
@@ -457,12 +518,10 @@ else:
             unsafe_allow_html=True
         )
 
-
         st.markdown(
             "Result",
             unsafe_allow_html=False
         )
-
 
         st.markdown(
             f'<div class="result-value">{final_result}</div>',
@@ -482,11 +541,9 @@ else:
         f"**Session ID:** {selected_session}"
     )
 
-
     st.write(
         f"**Start Time:** {session_data['start_time']}"
     )
-
 
     st.write(
         f"**End Time:** {session_data['end_time']}"
@@ -507,39 +564,28 @@ else:
 
     else:
 
-        col1, col2 = st.columns(2)
+        st.markdown("#### Violation Types")
+
+        session_type_data = get_violation_type_counts(
+            session_violations
+        )
+
+        st.bar_chart(
+            session_type_data.set_index("Type")
+        )
 
 
-        with col1:
+        st.markdown("#### Severity Distribution")
 
-            session_type_data = (
-                session_violations["type"]
-                .value_counts()
-                .rename_axis("Type")
-                .reset_index(name="Count")
+        session_severity_data = get_severity_counts(
+            session_violations
+        )
+
+        st.bar_chart(
+            session_severity_data.set_index(
+                "Severity"
             )
-
-
-            st.bar_chart(
-                session_type_data.set_index("Type")
-            )
-
-
-        with col2:
-
-            session_severity_data = (
-                session_violations["severity"]
-                .value_counts()
-                .rename_axis("Severity")
-                .reset_index(name="Count")
-            )
-
-
-            st.bar_chart(
-                session_severity_data.set_index(
-                    "Severity"
-                )
-            )
+        )
 
 
     st.divider()
@@ -625,7 +671,6 @@ else:
                 f"{violation['severity']}"
             )
 
-
             violation_options.append(
                 (
                     label,
@@ -674,7 +719,6 @@ else:
                 ) * 100
             )
 
-
             st.metric(
                 "Confidence",
                 f"{confidence:.2f}%"
@@ -687,13 +731,11 @@ else:
                 selected_violation["duration"]
             )
 
-
             if pd.isna(
                 violation_duration
             ):
 
                 violation_duration = 0
-
 
             st.metric(
                 "Duration",
@@ -748,7 +790,6 @@ else:
                     "Evidence file not found."
                 )
 
-
                 st.code(
                     evidence_path
                 )
@@ -780,7 +821,6 @@ else:
                     st.audio(
                         evidence_path
                     )
-
 
                     st.write(
                         os.path.basename(
