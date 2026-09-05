@@ -5,6 +5,7 @@ from camera import Camera
 from face_tracker import FaceTracker
 from voice_detector import VoiceDetector
 from monitor import WindowMonitor
+from object_detector import ObjectDetector
 
 
 camera = Camera()
@@ -13,6 +14,8 @@ voice_detector = VoiceDetector()
 window_monitor = WindowMonitor(
     exam_window_name="ProctorVision AI"
 )
+object_detector = ObjectDetector()
+
 
 voice_thread = threading.Thread(
     target=voice_detector.start,
@@ -34,16 +37,25 @@ cv2.setWindowProperty(
     cv2.WINDOW_FULLSCREEN
 )
 
+
 missing_face_frames = 0
 multiple_face_frames = 0
 gaze_frames = 0
+
+book_frames = 0
+book_missed_frames = 0
 
 missing_threshold = 15
 multiple_threshold = 10
 gaze_threshold = 90
 
+book_threshold = 5
+book_missed_threshold = 20
+
 current_warning = "CLEAN"
 previous_gaze_status = "CENTER"
+
+book_warning_active = False
 
 
 while True:
@@ -53,6 +65,37 @@ while True:
     if frame is None:
         print("Camera frame could not be read.")
         break
+
+    object_detections = object_detector.detect(frame)
+
+    phone_detected = any(
+        detection["class"] == "cell phone"
+        for detection in object_detections
+    )
+
+    book_detected = any(
+        detection["class"] == "book"
+        for detection in object_detections
+    )
+
+    if book_detected:
+
+        book_frames += 1
+        book_missed_frames = 0
+
+        if book_frames >= book_threshold:
+            book_warning_active = True
+
+    else:
+
+        book_frames = 0
+
+        if book_warning_active:
+            book_missed_frames += 1
+
+            if book_missed_frames >= book_missed_threshold:
+                book_warning_active = False
+                book_missed_frames = 0
 
     (
         frame,
@@ -256,6 +299,18 @@ while True:
             "WARNING: Window Switch!"
         )
 
+    if phone_detected:
+
+        warnings.append(
+            "WARNING: Phone Detected!"
+        )
+
+    if book_warning_active:
+
+        warnings.append(
+            "WARNING: Book Detected!"
+        )
+
     if warnings:
 
         warning_text = " | ".join(
@@ -338,6 +393,5 @@ while True:
 
 
 window_monitor.finalize()
-
 camera.release()
 cv2.destroyAllWindows()
