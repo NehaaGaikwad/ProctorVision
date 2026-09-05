@@ -2,4 +2,6 @@ env/
 __pycache__/
 database/*.db
 *.db
-evidence/mobileclip_blt.ts
+evidence/
+mobileclip_blt.ts
+reports
