@@ -3,6 +3,7 @@ import sqlite3
 import os
 import json
 import pandas as pd
+import plotly.express as px
 
 
 PROJECT_ROOT = os.path.dirname(
@@ -33,7 +34,6 @@ def get_connection():
 
 
 def get_sessions():
-
     connection = get_connection()
 
     dataframe = pd.read_sql_query(
@@ -55,7 +55,6 @@ def get_sessions():
 
 
 def get_violations():
-
     connection = get_connection()
 
     dataframe = pd.read_sql_query(
@@ -81,7 +80,6 @@ def get_violations():
 
 
 def get_session_violations(session_id):
-
     connection = get_connection()
 
     dataframe = pd.read_sql_query(
@@ -108,7 +106,6 @@ def get_session_violations(session_id):
 
 
 def calculate_risk_score(dataframe):
-
     score = 0
 
     for _, violation in dataframe.iterrows():
@@ -140,7 +137,6 @@ def get_final_result(dataframe):
 
 
 def get_report_path(session_id):
-
     return os.path.join(
         REPORTS_DIR,
         f"{session_id}.json"
@@ -284,6 +280,46 @@ def get_severity_counts(dataframe):
     )
 
 
+def create_static_bar_chart(
+    dataframe,
+    x_column,
+    y_column,
+    title
+):
+
+    fig = px.bar(
+        dataframe,
+        x=x_column,
+        y=y_column,
+        title=title,
+        text=y_column
+    )
+
+    fig.update_traces(
+        hovertemplate=(
+            "<b>%{x}</b><br>"
+            "Count: %{y}"
+            "<extra></extra>"
+        ),
+        textposition="none"
+    )
+
+    fig.update_layout(
+        dragmode=False,
+        hovermode="x",
+        xaxis_fixedrange=True,
+        yaxis_fixedrange=True,
+        margin=dict(
+            l=20,
+            r=20,
+            t=60,
+            b=20
+        )
+    )
+
+    return fig
+
+
 st.title("🛡️ ProctorVision AI")
 
 st.caption(
@@ -292,7 +328,6 @@ st.caption(
 
 
 if st.button("🔄 Refresh Dashboard"):
-
     st.rerun()
 
 
@@ -322,13 +357,11 @@ high_count = len(
     ]
 )
 
-
 medium_count = len(
     violations[
         violations["severity"] == "MEDIUM"
     ]
 )
-
 
 low_count = len(
     violations[
@@ -395,9 +428,23 @@ else:
         violations
     )
 
-    st.bar_chart(
-        type_data.set_index("Type")
+    type_chart = create_static_bar_chart(
+        type_data,
+        "Type",
+        "Count",
+        "Violation Types"
     )
+
+    st.plotly_chart(
+        type_chart,
+        use_container_width=True,
+        config={
+            "displayModeBar": False,
+            "scrollZoom": False,
+            "doubleClick": False
+        }
+    )
+
 
     st.markdown("### Severity Distribution")
 
@@ -405,8 +452,21 @@ else:
         violations
     )
 
-    st.bar_chart(
-        severity_data.set_index("Severity")
+    severity_chart = create_static_bar_chart(
+        severity_data,
+        "Severity",
+        "Count",
+        "Severity Distribution"
+    )
+
+    st.plotly_chart(
+        severity_chart,
+        use_container_width=True,
+        config={
+            "displayModeBar": False,
+            "scrollZoom": False,
+            "doubleClick": False
+        }
     )
 
 
@@ -519,8 +579,7 @@ else:
         )
 
         st.markdown(
-            "Result",
-            unsafe_allow_html=False
+            "Result"
         )
 
         st.markdown(
@@ -570,8 +629,21 @@ else:
             session_violations
         )
 
-        st.bar_chart(
-            session_type_data.set_index("Type")
+        session_type_chart = create_static_bar_chart(
+            session_type_data,
+            "Type",
+            "Count",
+            "Session Violation Types"
+        )
+
+        st.plotly_chart(
+            session_type_chart,
+            use_container_width=True,
+            config={
+                "displayModeBar": False,
+                "scrollZoom": False,
+                "doubleClick": False
+            }
         )
 
 
@@ -581,10 +653,21 @@ else:
             session_violations
         )
 
-        st.bar_chart(
-            session_severity_data.set_index(
-                "Severity"
-            )
+        session_severity_chart = create_static_bar_chart(
+            session_severity_data,
+            "Severity",
+            "Count",
+            "Session Severity Distribution"
+        )
+
+        st.plotly_chart(
+            session_severity_chart,
+            use_container_width=True,
+            config={
+                "displayModeBar": False,
+                "scrollZoom": False,
+                "doubleClick": False
+            }
         )
 
 
@@ -597,7 +680,6 @@ else:
     if not session_violations.empty:
 
         timeline_data = session_violations.copy()
-
 
         timeline_data["timestamp"] = pd.to_datetime(
             timeline_data["timestamp"]
@@ -782,6 +864,14 @@ else:
             )
 
 
+            if not os.path.isabs(evidence_path):
+
+                evidence_path = os.path.join(
+                    PROJECT_ROOT,
+                    evidence_path
+                )
+
+
             if not os.path.exists(
                 evidence_path
             ):
@@ -804,7 +894,10 @@ else:
                 if violation_type in [
                     "PHONE",
                     "BOOK",
-                    "WINDOW_SWITCH"
+                    "WINDOW_SWITCH",
+                    "NO_FACE",
+                    "MULTIPLE_FACES",
+                    "GAZE_VIOLATION"
                 ]:
 
                     st.image(

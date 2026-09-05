@@ -20,7 +20,6 @@ camera = Camera()
 face_tracker = FaceTracker()
 violation_manager = ViolationManager()
 report_generator = ReportGenerator()
-
 voice_detector = VoiceDetector(
     violation_manager
 )
@@ -85,6 +84,12 @@ best_phone_box = None
 
 book_violation_logged = False
 
+no_face_violation_logged = False
+multiple_faces_violation_logged = False
+gaze_violation_logged = False
+logged_gaze_status = "CENTER"
+
+
 evidence_dir = os.path.join(
     os.path.dirname(
         os.path.dirname(
@@ -97,6 +102,22 @@ evidence_dir = os.path.join(
 
 os.makedirs(
     evidence_dir,
+    exist_ok=True
+)
+
+
+face_evidence_dir = os.path.join(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.abspath(__file__)
+        )
+    ),
+    "evidence",
+    "face_detection"
+)
+
+os.makedirs(
+    face_evidence_dir,
     exist_ok=True
 )
 
@@ -188,6 +209,11 @@ while True:
 
             book_violation_logged = False
 
+            no_face_violation_logged = False
+            multiple_faces_violation_logged = False
+            gaze_violation_logged = False
+            logged_gaze_status = "CENTER"
+
             print()
             print("Exam monitoring started.")
             print(
@@ -258,6 +284,7 @@ while True:
         EXAM_DURATION - elapsed_time
     )
 
+
     if elapsed_time >= EXAM_DURATION:
 
         print()
@@ -290,6 +317,7 @@ while True:
         frame
     )
 
+
     phone_detected = any(
         detection["class"] == "cell phone"
         for detection in object_detections
@@ -300,6 +328,7 @@ while True:
         for detection in object_detections
     )
 
+
     phone_confidence = max(
         (
             detection["confidence"]
@@ -308,6 +337,7 @@ while True:
         ),
         default=0.0
     )
+
 
     book_confidence = max(
         (
@@ -369,7 +399,6 @@ while True:
             )
 
             best_phone_box = current_phone["box"]
-
             best_phone_frame = frame.copy()
 
     else:
@@ -463,6 +492,7 @@ while True:
         (0, 0, 255)
     )
 
+
     cv2.putText(
         frame,
         f"Face: {status}",
@@ -508,6 +538,7 @@ while True:
         voice_color,
         2
     )
+
 
     cv2.putText(
         frame,
@@ -598,6 +629,132 @@ while True:
 
 
     current_warning = violation_msg
+
+
+    if status == "NOT DETECTED":
+
+        multiple_faces_violation_logged = False
+        gaze_violation_logged = False
+        logged_gaze_status = "CENTER"
+
+        if (
+            missing_face_frames >= missing_threshold
+            and not no_face_violation_logged
+        ):
+
+            timestamp = datetime.now().strftime(
+                "%Y-%m-%d_%H-%M-%S"
+            )
+
+            evidence_path = os.path.join(
+                face_evidence_dir,
+                f"no_face_{timestamp}.jpg"
+            )
+
+            cv2.imwrite(
+                evidence_path,
+                frame
+            )
+
+            violation_manager.report_violation(
+                violation_type="NO_FACE",
+                duration=0.0,
+                confidence=1.0,
+                severity="HIGH",
+                evidence_path=evidence_path
+            )
+
+            no_face_violation_logged = True
+
+    else:
+
+        no_face_violation_logged = False
+
+
+    if face_count > 1:
+
+        no_face_violation_logged = False
+        gaze_violation_logged = False
+        logged_gaze_status = "CENTER"
+
+        if (
+            multiple_face_frames >= multiple_threshold
+            and not multiple_faces_violation_logged
+        ):
+
+            timestamp = datetime.now().strftime(
+                "%Y-%m-%d_%H-%M-%S"
+            )
+
+            evidence_path = os.path.join(
+                face_evidence_dir,
+                f"multiple_faces_{timestamp}.jpg"
+            )
+
+            cv2.imwrite(
+                evidence_path,
+                frame
+            )
+
+            violation_manager.report_violation(
+                violation_type="MULTIPLE_FACES",
+                duration=0.0,
+                confidence=1.0,
+                severity="HIGH",
+                evidence_path=evidence_path
+            )
+
+            multiple_faces_violation_logged = True
+
+    else:
+
+        multiple_faces_violation_logged = False
+
+
+    if (
+        status == "DETECTED"
+        and face_count == 1
+        and gaze_status != "CENTER"
+    ):
+
+        if (
+            gaze_frames >= gaze_threshold
+            and (
+                not gaze_violation_logged
+                or logged_gaze_status != gaze_status
+            )
+        ):
+
+            timestamp = datetime.now().strftime(
+                "%Y-%m-%d_%H-%M-%S"
+            )
+
+            evidence_path = os.path.join(
+                face_evidence_dir,
+                f"gaze_{timestamp}.jpg"
+            )
+
+            cv2.imwrite(
+                evidence_path,
+                frame
+            )
+
+            violation_manager.report_violation(
+                violation_type="GAZE_VIOLATION",
+                duration=0.0,
+                confidence=1.0,
+                severity="MEDIUM",
+                evidence_path=evidence_path
+            )
+
+            gaze_violation_logged = True
+            logged_gaze_status = gaze_status
+
+    else:
+
+        gaze_violation_logged = False
+        logged_gaze_status = "CENTER"
+
 
     warnings = []
 
@@ -734,6 +891,7 @@ while True:
             else frame.copy()
         )
 
+
         if best_phone_box is not None:
 
             x1, y1, x2, y2 = best_phone_box
@@ -756,12 +914,15 @@ while True:
                 2
             )
 
+
         cv2.imwrite(
             evidence_path,
             evidence_frame
         )
 
+
         phone_confidence = best_phone_confidence
+
 
         if phone_confidence >= 0.70:
 
@@ -798,6 +959,7 @@ while True:
             evidence_path,
             frame
         )
+
 
         if book_confidence >= 0.80:
 
