@@ -4,7 +4,6 @@ from datetime import datetime
 
 
 class ViolationManager:
-
     def __init__(self, database=None):
 
         if database is None:
@@ -20,6 +19,7 @@ class ViolationManager:
             )
 
         self.database = database
+        self.current_session_id = None
 
         os.makedirs(
             os.path.dirname(self.database),
@@ -38,6 +38,16 @@ class ViolationManager:
         cursor = connection.cursor()
 
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT UNIQUE NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time TEXT,
+                status TEXT NOT NULL
+            )
+        """)
+
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS violations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 type TEXT NOT NULL,
@@ -49,8 +59,108 @@ class ViolationManager:
             )
         """)
 
+        columns = [
+            row[1]
+            for row in cursor.execute(
+                "PRAGMA table_info(violations)"
+            ).fetchall()
+        ]
+
+        if "session_id" not in columns:
+            cursor.execute("""
+                ALTER TABLE violations
+                ADD COLUMN session_id TEXT
+            """)
+
         connection.commit()
         connection.close()
+
+
+    def start_session(self):
+
+        timestamp = datetime.now()
+        session_id = timestamp.strftime(
+            "EXAM_%Y%m%d_%H%M%S"
+        )
+
+        connection = sqlite3.connect(
+            self.database
+        )
+
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            INSERT INTO sessions
+            (
+                session_id,
+                start_time,
+                status
+            )
+            VALUES (?, ?, ?)
+        """, (
+            session_id,
+            timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            "RUNNING"
+        ))
+
+        connection.commit()
+        connection.close()
+
+        self.current_session_id = session_id
+
+        print()
+        print("=" * 60)
+        print("EXAM SESSION STARTED")
+        print("=" * 60)
+        print(f"Session ID : {session_id}")
+        print(f"Start Time : {timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+        print("=" * 60)
+        print()
+
+        return session_id
+
+
+    def end_session(self):
+
+        if self.current_session_id is None:
+            return
+
+        timestamp = datetime.now()
+
+        connection = sqlite3.connect(
+            self.database
+        )
+
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            UPDATE sessions
+            SET
+                end_time = ?,
+                status = ?
+            WHERE session_id = ?
+        """, (
+            timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            "COMPLETED",
+            self.current_session_id
+        ))
+
+        connection.commit()
+        connection.close()
+
+        print()
+        print("=" * 60)
+        print("EXAM SESSION ENDED")
+        print("=" * 60)
+        print(f"Session ID : {self.current_session_id}")
+        print(f"End Time   : {timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+        print("=" * 60)
+        print()
+
+        session_id = self.current_session_id
+        self.current_session_id = None
+
+        return session_id
 
 
     def report_violation(
@@ -80,16 +190,18 @@ class ViolationManager:
                 duration,
                 confidence,
                 severity,
-                evidence_path
+                evidence_path,
+                session_id
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             violation_type,
             timestamp,
             duration,
             confidence,
             severity,
-            evidence_path
+            evidence_path,
+            self.current_session_id
         ))
 
         connection.commit()
@@ -106,6 +218,9 @@ class ViolationManager:
 
         if evidence_path:
             print(f"Evidence   : {evidence_path}")
+
+        if self.current_session_id:
+            print(f"Session    : {self.current_session_id}")
 
         print("=" * 60)
         print()
