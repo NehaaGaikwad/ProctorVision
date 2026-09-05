@@ -11,12 +11,16 @@ class ObjectDetector:
             "book"
         }
 
-        self.confidence_threshold = 0.35
+        self.confidence_thresholds = {
+            "cell phone": 0.05,
+            "book": 0.20
+        }
 
     def detect(self, frame):
 
         results = self.model(
             frame,
+            conf=0.01,
             verbose=False
         )
 
@@ -32,7 +36,7 @@ class ObjectDetector:
 
                 if (
                     class_name in self.target_classes
-                    and confidence >= self.confidence_threshold
+                    and confidence >= self.confidence_thresholds[class_name]
                 ):
 
                     x1, y1, x2, y2 = map(

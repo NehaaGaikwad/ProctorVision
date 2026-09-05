@@ -1,11 +1,14 @@
 import cv2
 import threading
+import os
+from datetime import datetime
 
 from camera import Camera
 from face_tracker import FaceTracker
 from voice_detector import VoiceDetector
 from monitor import WindowMonitor
 from object_detector import ObjectDetector
+from violation_manager import ViolationManager
 
 
 camera = Camera()
@@ -15,6 +18,7 @@ window_monitor = WindowMonitor(
     exam_window_name="ProctorVision AI"
 )
 object_detector = ObjectDetector()
+violation_manager = ViolationManager()
 
 
 voice_thread = threading.Thread(
@@ -49,13 +53,31 @@ missing_threshold = 15
 multiple_threshold = 10
 gaze_threshold = 90
 
-book_threshold = 5
+book_threshold = 1
 book_missed_threshold = 20
 
 current_warning = "CLEAN"
 previous_gaze_status = "CENTER"
 
 book_warning_active = False
+
+phone_violation_logged = False
+book_violation_logged = False
+
+evidence_dir = os.path.join(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.abspath(__file__)
+        )
+    ),
+    "evidence",
+    "object_detection"
+)
+
+os.makedirs(
+    evidence_dir,
+    exist_ok=True
+)
 
 
 while True:
@@ -78,6 +100,24 @@ while True:
         for detection in object_detections
     )
 
+    phone_confidence = max(
+        (
+            detection["confidence"]
+            for detection in object_detections
+            if detection["class"] == "cell phone"
+        ),
+        default=0.0
+    )
+
+    book_confidence = max(
+        (
+            detection["confidence"]
+            for detection in object_detections
+            if detection["class"] == "book"
+        ),
+        default=0.0
+    )
+
     if book_detected:
 
         book_frames += 1
@@ -91,11 +131,16 @@ while True:
         book_frames = 0
 
         if book_warning_active:
+
             book_missed_frames += 1
 
             if book_missed_frames >= book_missed_threshold:
                 book_warning_active = False
                 book_missed_frames = 0
+                book_violation_logged = False
+
+    if not phone_detected:
+        phone_violation_logged = False
 
     (
         frame,
@@ -106,7 +151,6 @@ while True:
     ) = face_tracker.process_frame(frame)
 
     window_status = window_monitor.check()
-
     fps = camera.calculate_fps()
     height, width = frame.shape[:2]
 
@@ -223,7 +267,6 @@ while True:
         previous_gaze_status = "CENTER"
 
         if missing_face_frames >= missing_threshold:
-
             violation_msg = (
                 "WARNING: Face Not Detected!"
             )
@@ -237,7 +280,6 @@ while True:
         previous_gaze_status = "CENTER"
 
         if multiple_face_frames >= multiple_threshold:
-
             violation_msg = (
                 "WARNING: Multiple Faces Detected!"
             )
@@ -248,7 +290,6 @@ while True:
         multiple_face_frames = 0
 
         if gaze_status != previous_gaze_status:
-
             gaze_frames = 0
 
         gaze_frames += 1
@@ -382,6 +423,72 @@ while True:
             (255, 255, 255),
             2
         )
+
+    if phone_detected and not phone_violation_logged:
+
+        timestamp = datetime.now().strftime(
+            "%Y-%m-%d_%H-%M-%S"
+        )
+
+        evidence_path = os.path.join(
+            evidence_dir,
+            f"phone_{timestamp}.jpg"
+        )
+
+        cv2.imwrite(
+            evidence_path,
+            frame
+        )
+
+        if phone_confidence >= 0.80:
+            severity = "HIGH"
+        elif phone_confidence >= 0.50:
+            severity = "MEDIUM"
+        else:
+            severity = "LOW"
+
+        violation_manager.report_violation(
+            violation_type="PHONE",
+            duration=0.0,
+            confidence=phone_confidence,
+            severity=severity,
+            evidence_path=evidence_path
+        )
+
+        phone_violation_logged = True
+
+    if book_warning_active and not book_violation_logged:
+
+        timestamp = datetime.now().strftime(
+            "%Y-%m-%d_%H-%M-%S"
+        )
+
+        evidence_path = os.path.join(
+            evidence_dir,
+            f"book_{timestamp}.jpg"
+        )
+
+        cv2.imwrite(
+            evidence_path,
+            frame
+        )
+
+        if book_confidence >= 0.80:
+            severity = "HIGH"
+        elif book_confidence >= 0.50:
+            severity = "MEDIUM"
+        else:
+            severity = "LOW"
+
+        violation_manager.report_violation(
+            violation_type="BOOK",
+            duration=0.0,
+            confidence=book_confidence,
+            severity=severity,
+            evidence_path=evidence_path
+        )
+
+        book_violation_logged = True
 
     cv2.imshow(
         window_name,
